@@ -26,6 +26,7 @@ public:
     std::list<T*> m_requestQueue;
     pthread_mutex_t m_mutex;
     pthread_t* m_thread;
+    log* m_logger;
 };
 
 template<typename T>
@@ -40,11 +41,16 @@ threadPool<T>::threadPool(int threadNum, int maxRequestNum)
     pthread_mutex_init(&m_mutex, NULL);
     sem_init(&m_workQueueCond, 0, 0);
 
+
     m_thread = new pthread_t[m_threadMaxNum];
     if (!m_thread)
     {
         throw std::exception();
     }
+
+    m_logger = log::getInstance("/home/miyan/web/webserver/log/ym.txt");
+
+
     for (uint16_t i = 0; i < m_threadMaxNum; i++) {
         if (pthread_create(m_thread + i, NULL, worker, this) != 0)
         {
@@ -75,8 +81,8 @@ threadPool<T>::~threadPool()
 template<typename T>
 bool threadPool<T>::append(T *request)
 {
-    if (m_requestQueue.size() > m_maxRequestNum) {
-        std::cout<<"out of queue size"<<std::endl;
+    if (static_cast<int>(m_requestQueue.size()) > m_maxRequestNum) {
+        m_logger->writeLog("out of queue size", logClass::INFO);
         return false;
     }
     pthread_mutex_lock(&m_mutex);
@@ -110,7 +116,9 @@ void threadPool<T>::run()
         if (request == nullptr) {
             continue;
         }
-        request->Process();
+        RetParserState ret = request->Process();
+        bool result = request->processWrite(ret);
+        request->processWriteHelper(result);
     }
 }
 

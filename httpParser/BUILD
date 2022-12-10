@@ -8,7 +8,7 @@ cc_library(
             "httpParser.h"],
     hdrs = glob(["**/*.h",
                 "**/*.hpp"]),
-    deps = ["//public_def:public_def"],
+    deps = ["//public_def:public_def", "//log:logLib"],
     linkopts = ["-std=c++11"],
     visibility = ["//visibility:public"],
 )

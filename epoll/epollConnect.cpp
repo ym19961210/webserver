@@ -15,7 +15,6 @@
 #include <signal.h>
 #include <string>
 
-const char *ok_200_title = "OK";
 int *u_pipe;
 
 pthread_mutex_t log::m_createMutex = PTHREAD_MUTEX_INITIALIZER;
@@ -26,9 +25,8 @@ void callBackFunction(clientData *data)
     epoll_ctl(timer::m_epollFd, EPOLL_CTL_DEL, data->socket, NULL);
     close(data->socket);
 
-    log *lger = log::getInstance("");
-    std::string stringInfo = "socket close:" + std::to_string(data->socket);
-    lger->writeLog(stringInfo.c_str(), logClass::INFO);
+    log *lger = log::getInstance();
+    lger->writeLog(logClass::INFO, "socket close:%d", data->socket);
 }
 
 void sig_handler(int sig)
@@ -142,13 +140,11 @@ RetValue epollConnect::run()
                     continue;
                 }
                 char ip[20];
-                char logInfo[100];
-                sprintf(logInfo, "new connection[%s:%d]\n", inet_ntop(AF_INET, &client_addr.sin_addr, ip, sizeof(ip)),
-                        ntohs(client_addr.sin_port));
-                m_logger->writeLog(logInfo, logClass::INFO);
+                m_logger->writeLog(logClass::INFO, "new connection[%s:%d]\n", inet_ntop(AF_INET, &client_addr.sin_addr, ip, sizeof(ip)), ntohs(client_addr.sin_port));
                 event.events = EPOLLIN | EPOLLET;
                 event.data.fd = client_fd;
                 setnonblocking(client_fd);
+                m_logger->writeLog(logClass::INFO, "new fd is %d", client_fd);
 
                 timer *newTimer = new timer();
                 time_t curTime = time(NULL);
@@ -185,14 +181,20 @@ RetValue epollConnect::run()
                 }
             } else if (my_events[i].events & EPOLLIN) {
                 m_logger->writeLog("EPOLLIN", logClass::INFO);
+                sleep(1);
                 client_fd = my_events[i].data.fd;
 
                 m_parser.get()[client_fd].setSocketFd(client_fd);
                 m_parser.get()[client_fd].setEpollFd(m_epollFd);
                 bool ret = m_parser.get()[client_fd].ReadFromSocket(client_fd, nullptr, 1024, 0, &event);
-                
+                m_logger->writeLog(logClass::INFO, "recvfinal:%s", m_parser.get()[client_fd].m_readBuff.get());
                 if (ret == false) {
                     m_logger->writeLog("err in read process", logClass::ERROR);
+                    timer *correspondingTimer = userData[client_fd].curTimer;
+                    callBackFunction(&userData[client_fd]);
+                    if (correspondingTimer) {
+                        lst.deleteTimer(correspondingTimer);
+                    }
                 } else {
                     timer *correspondingTimer = userData[client_fd].curTimer;
                     time_t curTime = time(NULL);
@@ -206,14 +208,23 @@ RetValue epollConnect::run()
             } else if (my_events[i].events & EPOLLOUT) {
                 m_logger->writeLog("EPOLLOUT", logClass::INFO);
                 client_fd = my_events[i].data.fd;
-                m_parser.get()[client_fd].HttpResponse();
-
+                bool ret = m_parser.get()[client_fd].HttpResponse();
+                if (ret == true) {
                 timer *correspondingTimer = userData[client_fd].curTimer;
-                time_t curTime = time(NULL);
-                if (correspondingTimer != NULL) {
-                    correspondingTimer->m_expireTime = curTime + 3 * 5;
-                    lst.adjustTimer(correspondingTimer);
+                    time_t curTime = time(NULL);
+                    if (correspondingTimer != NULL) {
+                        correspondingTimer->m_expireTime = curTime + 3 * 5;
+                        lst.adjustTimer(correspondingTimer);
+                    }
+                } else {
+                    m_logger->writeLog("need to close", logClass::ERROR);
+                    timer *correspondingTimer = userData[client_fd].curTimer;
+                    callBackFunction(&userData[client_fd]);
+                    if (correspondingTimer) {
+                        lst.deleteTimer(correspondingTimer);
+                    }
                 }
+
             }
         }
 

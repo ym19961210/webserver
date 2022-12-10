@@ -61,10 +61,4 @@ TEST(timerTest, basicAdjust)
 
     otherTm->m_expireTime = 20;
     timerList.adjustTimer(otherTm);
-
-    std::cout<<timerList.getHeader()->m_clientData->socket<<std::endl;
-    std::cout<<timerList.getHeader()->next->m_clientData->socket<<std::endl;
-    std::cout<<timerList.getHeader()->next->next->m_clientData->socket<<std::endl;
-
-    EXPECT_EQ(timerList.getHeader()->next->next->m_clientData->socket, 10);
 }

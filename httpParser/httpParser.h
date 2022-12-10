@@ -12,6 +12,7 @@
 #include <sys/epoll.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include "log/log.h"
 
 struct HttpRequestFrame
 {
@@ -96,8 +97,20 @@ private:
 private:
     int m_byteHadRead = 0;
     int m_byteHadReadTotal = 0;
+    log* m_logger;
 
 public:
+    /**
+     * @brief Read information from socket.
+     *
+     * @param sockfd The socket read from.
+     * @param buf 
+     * @param len 
+     * @param flags 
+     * @param event 
+     * @return true 
+     * @return false 
+     */
     bool ReadFromSocket(int sockfd, char *buf, size_t len, int flags, epoll_event *event);
 
     void setEpollFd(int epollFd)
@@ -111,6 +124,10 @@ public:
     }
 
     RetParserState Process();
+
+    bool processWrite(RetParserState ret);
+
+    void processWriteHelper(bool ret);
 };
 
 #endif

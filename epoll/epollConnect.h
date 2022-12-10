@@ -16,6 +16,10 @@
 
 class epollConnect {
 public:
+    /**
+     * @brief Construct a epollConnect object.
+     *
+     */
     epollConnect();
     ~epollConnect();
     RetValue run();

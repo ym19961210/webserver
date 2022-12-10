@@ -6,8 +6,21 @@
 class httpResponser {
 public:
     static const int WRITE_BUFFER_SIZE = 1024;
-    char m_write_buf[WRITE_BUFFER_SIZE];
-    int m_write_idx = 0;
+    char* getWriteBuffer()
+    {
+        return m_write_buf;
+    }
+
+    int getWriteIndex()
+    {
+        return m_write_idx;
+    }
+
+    void setWriteIndex(int setValue)
+    {
+        m_write_idx = setValue;
+    }
+
     bool add_response(const char *format, ...);
     bool add_status_line(int status, const char *title);
     bool add_headers(int content_len);
@@ -18,6 +31,9 @@ public:
     bool add_content(const char *content);
     void clearBuffer();
 
+private:
+    char m_write_buf[WRITE_BUFFER_SIZE];
+    int m_write_idx = 0;
 };
 
 #endif

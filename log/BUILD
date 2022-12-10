@@ -15,6 +15,6 @@ cc_library(
     hdrs = glob(["**/*.h",
                 "**/*.hpp"]),
     deps = ["//public_def:public_def"],
-    linkopts = ["-std=c++11"],
+    linkopts = ["-std=c++11", "-g"],
     visibility = ["//visibility:public"],
 )

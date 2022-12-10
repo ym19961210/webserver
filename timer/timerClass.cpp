@@ -85,6 +85,7 @@ void sort_list_timer::deleteTimer(timer *targerTimer)
         delete targerTimer;
         head = NULL;
         tail = NULL;
+        return;
     }
 
     if (targerTimer == head) {

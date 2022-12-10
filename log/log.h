@@ -12,6 +12,7 @@
 #include <string>
 #include <string.h>
 #include <memory>
+#include <stdarg.h>
 
 enum class logClass : uint8_t {
     DEBUG = 0,
@@ -35,6 +36,18 @@ public:
             pthread_mutex_lock(&m_createMutex);
             if (m_instance == nullptr) {
                 m_instance = new log(fileName, 60000);
+            }
+            pthread_mutex_unlock(&m_createMutex);
+        }
+        return m_instance;
+    }
+
+    static log* getInstance() // todo:bug here.
+    {
+        if (m_instance == nullptr) {
+            pthread_mutex_lock(&m_createMutex);
+            if (m_instance == nullptr) {
+                m_instance = new log("/home/miyan/web/webserver/log/defaultLog.txt", 60000);
             }
             pthread_mutex_unlock(&m_createMutex);
         }
@@ -69,7 +82,6 @@ public:
 
     static void * worker(void * arg)
     {
-        std::cout<<log::getFilename()<<std::endl;
         log * ptr = log::getInstance(log::getFilename());
         ptr->workerHelper();
         return (void *)(0);
@@ -78,6 +90,16 @@ public:
     bool writeLog(const char * logContent, logClass lgclass)
     {
         return m_queue.push(logContent) && m_classQueue.push(lgclass);
+    }
+
+    bool writeLog(logClass lgclass, const char * logContent,  ...)
+    {
+        memset(m_logBuf, '\0', 1024);
+        va_list varList;
+        va_start(varList, logContent);
+        vsnprintf(m_logBuf, 1024, logContent, varList);
+        va_end(varList);
+        return m_queue.push(m_logBuf) && m_classQueue.push(lgclass);
     }
 
     void write(const char * logContent, logClass lgclass)
@@ -94,7 +116,7 @@ public:
         if (m_lineCnt >= 50000) {
             m_lineCnt = 0;
             m_file.close();
-            std::unique_ptr<char> newFileName(new char[50]);
+            std::unique_ptr<char> newFileName(new char[100]);
             strcpy(newFileName.get(), m_fileName);
             strcat(newFileName.get(), timeInfo);
             m_file.open(newFileName.get(), std::ofstream::out | std::ofstream::app);
@@ -132,7 +154,6 @@ public:
     {
         m_fileName = new char[200];
         strcpy(m_fileName, fileName);
-        std::cout<<m_fileName<<std::endl;
         m_file.open(m_fileName, std::ofstream::out | std::ofstream::app);
         if (!m_file.is_open()) {
             std::cout<<"not open"<<std::endl;
@@ -141,9 +162,13 @@ public:
 
     pthread_t init()
     {
-        pthread_t tid;
-        pthread_create(&tid, NULL, worker, NULL);
-        return tid;
+        if (!m_threadHaveBeenCreated) {
+            pthread_t tid;
+            pthread_create(&tid, NULL, worker, NULL);
+            m_threadHaveBeenCreated = true;
+            return tid;
+        }
+        return 0;
     }
 
     ~log()
@@ -151,6 +176,9 @@ public:
         m_file.close();
         delete m_fileName;
     }
+
+    bool m_threadHaveBeenCreated = false;
+    char m_logBuf[1024];
 };
 
 

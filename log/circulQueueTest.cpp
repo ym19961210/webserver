@@ -24,10 +24,8 @@ void * worker(void *arg)
 {
     msgQueue<testWork> q = *((msgQueue<testWork>*)arg);
     testWork item;
-    std::cout<<"pop begin"<<std::endl;
     while (1) {
         q.pop(item);
-        std::cout<<item.m_str<<std::endl;
     }
     return (void *)(0);
 }
