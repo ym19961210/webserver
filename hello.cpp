@@ -2,8 +2,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string>
-#include "test1.h"
-#include "test3.h"
+#include <bitset>
 
 int test(int x1, int x2, const char* format, ...)
 {
@@ -45,7 +44,15 @@ A a{3.1415926535897932384626433832795028841971693993751058209749445923078};
 double tmp1{a};
 // float tmp2{a}; //compilation error instead of warning, prevents from data
 // precision loss
+uint8_t f = 0;
+for (int i = 0; i <=266; i++) {
+    printf("%d\n", f);
+    f = static_cast<uint8_t>(f + 1);
+}
 
+printf("do\n");
+uint8_t gg = static_cast<uint8_t>(256);
+printf("%d\n", gg);
 return 0;
 }
     

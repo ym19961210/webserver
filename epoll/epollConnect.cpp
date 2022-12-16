@@ -14,7 +14,10 @@
 #include "timer/timerClass.h"
 #include <signal.h>
 #include <string>
+#include "../test.h"
 
+clock_t tm = 0;
+clock_t tmLastValue = 0;
 int *u_pipe;
 
 pthread_mutex_t log::m_createMutex = PTHREAD_MUTEX_INITIALIZER;
@@ -134,6 +137,10 @@ RetValue epollConnect::run()
         int i = 0;
         for (i = 0; i < active_fds_cnt; i++) {
             if (my_events[i].data.fd == listen_fd) {
+                // calculate(2, "");
+                // printf("sc:%d listen\n", my_events[i].data.fd);
+                // fflush(stdout);
+
                 client_fd = accept(listen_fd, (struct sockaddr*) &client_addr, &client_len);
                 if (client_fd < 0) {
                     perror("accept");
@@ -156,6 +163,7 @@ RetValue epollConnect::run()
                 newTimer->m_clientData = &userData[client_fd];
                 lst.addTimer(newTimer);
                 epoll_ctl(m_epollFd, EPOLL_CTL_ADD, client_fd, &event);
+                // calculate(0, "listen and accept after");
             } else if (my_events[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
                 client_fd = my_events[i].data.fd;
                 timer *correspondingTimer = userData[client_fd].curTimer;
@@ -180,8 +188,10 @@ RetValue epollConnect::run()
                     }
                 }
             } else if (my_events[i].events & EPOLLIN) {
+                // calculate(2, "");
+                // printf("sc:%d epoll in\n", my_events[i].data.fd);
+                // fflush(stdout);
                 m_logger->writeLog("EPOLLIN", logClass::INFO);
-                sleep(1);
                 client_fd = my_events[i].data.fd;
 
                 m_parser.get()[client_fd].setSocketFd(client_fd);
@@ -205,7 +215,12 @@ RetValue epollConnect::run()
 
                     m_threadPool->append(&m_parser.get()[client_fd]);
                 }
+                // calculate(0, "read data from socket after");
             } else if (my_events[i].events & EPOLLOUT) {
+                // calculate(2, "");
+                // printf("sc:%d epoll out\n", my_events[i].data.fd);
+                // fflush(stdout);
+
                 m_logger->writeLog("EPOLLOUT", logClass::INFO);
                 client_fd = my_events[i].data.fd;
                 bool ret = m_parser.get()[client_fd].HttpResponse();
@@ -224,7 +239,9 @@ RetValue epollConnect::run()
                         lst.deleteTimer(correspondingTimer);
                     }
                 }
-
+                // calculate(0, "write data to socket after");
+                // printf("write finish\n");
+                // fflush(stdout);
             }
         }
 

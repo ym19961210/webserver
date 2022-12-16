@@ -5,6 +5,7 @@ cc_test(
   srcs = ["threadPoolTest.cpp", "threadpool.h"],
   deps = [
     "@com_google_googletest//:gtest_main",
+    "//:headersOffer",
   ],
 )
 
@@ -14,5 +15,6 @@ cc_library(
     linkopts = ["-std=c++11", "-lpthread", "-g"],
     hdrs = glob(["**/*.h",
                 "**/*.hpp"]),
+    deps = ["//:headersOffer"],
     visibility = ["//visibility:public"],
 )

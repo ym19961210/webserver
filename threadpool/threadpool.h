@@ -4,6 +4,7 @@
 #include <semaphore.h>
 #include <list>
 #include <pthread.h>
+#include "../test.h"
 
 
 template<typename T>
@@ -116,9 +117,11 @@ void threadPool<T>::run()
         if (request == nullptr) {
             continue;
         }
+        // calculate(2, "");
         RetParserState ret = request->Process();
         bool result = request->processWrite(ret);
         request->processWriteHelper(result);
+        // calculate(0, "parser and write");
     }
 }
 
