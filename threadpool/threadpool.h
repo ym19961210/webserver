@@ -6,28 +6,62 @@
 #include <pthread.h>
 #include "../test.h"
 
-
+/**
+ * @brief Thread pool.
+ *
+ * @tparam T Type of thread.
+ */
 template<typename T>
 class threadPool
 {
 public:
-    int m_threadNum;
-    int m_threadMaxNum;
-    int m_maxRequestNum;
+    int m_threadMaxNum; /// Max Thread number.
+    int m_maxRequestNum; /// Max request number.
+
+    /**
+     * @brief Construct a new thread Pool object
+     *
+     * @param threadNum Max Thread number.
+     * @param maxRequestNum Max request number.
+     */
     threadPool(int threadNum = 8, int maxRequestNum = 10000);
+
+    /**
+     * @brief Destroy the thread Pool object
+     *
+     */
     ~threadPool();
+
+    /**
+     * @brief Append a request to the internal queue, when there is request in the queue, worker thread will be awaked to do business logic.
+     *
+     * @param request The request which is going to be added.
+     * @return true Append successfully.
+     * @return false Append unsuccessfully.
+     */
     bool append(T *request);
 
 private:
+    /**
+     * @brief Function which run in the working thread.
+     *
+     * @param arg parameters which working thread is using.
+     * @return void* no use, which is required by the thread create process.
+     */
     static void * worker(void * arg);
+
+    /**
+     * @brief Working function.
+     *
+     */
     void run();
 
 public:
-    sem_t m_workQueueCond;
-    std::list<T*> m_requestQueue;
-    pthread_mutex_t m_mutex;
-    pthread_t* m_thread;
-    log* m_logger;
+    sem_t m_workQueueCond; /// sem used to do thread sync.
+    std::list<T*> m_requestQueue; /// request list.
+    pthread_mutex_t m_mutex; /// mutex used to do thread sync.
+    pthread_t* m_thread; /// Pointer of working thread array.
+    log* m_logger; /// logger handle.
 };
 
 template<typename T>
@@ -117,11 +151,9 @@ void threadPool<T>::run()
         if (request == nullptr) {
             continue;
         }
-        // calculate(2, "");
         RetParserState ret = request->Process();
         bool result = request->processWrite(ret);
         request->processWriteHelper(result);
-        // calculate(0, "parser and write");
     }
 }
 

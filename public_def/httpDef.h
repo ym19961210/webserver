@@ -3,6 +3,10 @@
 
 #include <stdint.h>
 
+/**
+ * @brief Http method.
+ *
+ */
 enum class HttpMethod : uint8_t {
     GET = 0,
     POST,
@@ -16,11 +20,19 @@ enum class HttpMethod : uint8_t {
     UNKNOWN,
 };
 
+/**
+ * @brief To be deprecated.
+ *
+ */
 struct HttpMethodAndRelatedStr {
     HttpMethod method;
     const char *methodStr;
 };
 
+/**
+ * @brief Parsing state.
+ *
+ */
 enum class ParsingState : uint8_t {
     REQUESTLINE = 0,
     HEADER,

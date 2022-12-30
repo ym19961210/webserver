@@ -162,7 +162,6 @@ RetParserState httpParser::parse_content(char *text)
     if (m_totalIndex >= (m_content_length + m_processIndex))
     {
         text[m_content_length] = '\0';
-        //POST请求中最后为输入的用户名和密码
         m_content = text;
         return RetParserState::GET_REQUEST;
     }
@@ -287,16 +286,6 @@ RetParserState httpParser::ProcessRequest()
     int fd = open(m_urlFile, O_RDONLY);
     m_fileAddress = (char *)mmap(0, m_fileStatus.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     close(fd);
-
-    // const char *ok_200_title = "OK";
-    // reponser->add_status_line(200, ok_200_title);
-    // reponser->add_headers(m_fileStatus.st_size);
-    // m_iv[0].iov_base = reponser->getWriteBuffer();
-    // m_iv[0].iov_len = reponser->getWriteIndex();
-    // m_iv[1].iov_base = m_fileAddress;
-    // m_iv[1].iov_len = m_fileStatus.st_size;
-    // m_iv_count = 2;
-    // m_sendBytes = reponser->getWriteIndex() + m_fileStatus.st_size;
 
     return RetParserState::FILE_REQUEST;
 }
@@ -453,15 +442,10 @@ void httpParser::init(int epollFd, int fd)
     memset(reponser.get()->getWriteBuffer(), '\0', 1024);
     reponser.get()->setWriteIndex(0);
     
-    // m_totalIndex = 0;
-    // m_content_length = 0;
-    // m_currentLine = 0;
     memset(m_urlFile, '\0', 1024);
     memset(m_readBuff.get(), '\0', 1024);
     m_sendBytes = 0;
     m_bytesHaveSend = 0;
-    
-
 }
 
 bool httpParser::ReadFromSocket(int sockfd, char *buf, size_t len, int flags, epoll_event *event)
