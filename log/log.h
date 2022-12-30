@@ -14,6 +14,10 @@
 #include <memory>
 #include <stdarg.h>
 
+/**
+ * @brief Log level.
+ *
+ */
 enum class logClass : uint8_t {
     DEBUG = 0,
     INFO = 1,
@@ -21,16 +25,32 @@ enum class logClass : uint8_t {
     ERROR = 3,
 };
 
+/**
+ * @brief A struct used to log the level and logContent.
+ *
+ */
 struct logEventInfo {
     std::string logContent;
     logClass lgclass;
 };
 
+/**
+ * @brief A async log tool. User will append log request to the message queue and working
+ *        thread will pop request and write it to the log file.
+ *
+ */
 class log {
 public:
 
-    static pthread_mutex_t m_createMutex;
-    static log* getInstance(const char *fileName) // todo:bug here.
+    static pthread_mutex_t m_createMutex; /// mutext used to do thread sync.
+
+    /**
+     * @brief Get the Instance object
+     *
+     * @param[in] fileName The log file name.
+     * @return log* Handle of log tool.
+     */
+    static log* getInstance(const char *fileName)
     {
         if (m_instance == nullptr) {
             pthread_mutex_lock(&m_createMutex);
@@ -42,7 +62,12 @@ public:
         return m_instance;
     }
 
-    static log* getInstance() // todo:bug here.
+    /**
+     * @brief Get the Instance object
+     *
+     * @return log* Handle of log tool.
+     */
+    static log* getInstance()
     {
         if (m_instance == nullptr) {
             pthread_mutex_lock(&m_createMutex);
@@ -54,23 +79,32 @@ public:
         return m_instance;
     }
 
+    /**
+     * @brief Get the filename.
+     *
+     * @return char* file name.
+     */
     static char* getFilename()
     {
         return log::getInstance(nullptr)->m_fileName;
     }
 
 private:
-    static log* m_instance;
+    static log* m_instance; /// single mode, the only instance's pointer.
 
 public:
 
-    char *m_fileName = nullptr;
-    std::ofstream m_file;
-    int m_lineCnt = 0;
-    msgQueue<std::string> m_queue;
-    msgQueue<logClass> m_classQueue;
-    pthread_mutex_t m_mutex = PTHREAD_MUTEX_INITIALIZER;
+    char *m_fileName = nullptr; /// file name.
+    std::ofstream m_file; /// file stream.
+    int m_lineCnt = 0; /// The line cnt.
+    msgQueue<std::string> m_queue; /// message queue.
+    msgQueue<logClass> m_classQueue; /// class queue.
+    pthread_mutex_t m_mutex = PTHREAD_MUTEX_INITIALIZER; /// mutex used to do thread sync.
 
+    /**
+     * @brief Helper function of working thread. Pop item from log queue and write it to the file.
+     *
+     */
     void workerHelper()
     {
         std::string event;
@@ -80,6 +114,12 @@ public:
         }
     }
 
+    /**
+     * @brief Working thread function.
+     *
+     * @param arg 
+     * @return void* 
+     */
     static void * worker(void * arg)
     {
         log * ptr = log::getInstance(log::getFilename());
@@ -87,11 +127,28 @@ public:
         return (void *)(0);
     }
 
+    /**
+     * @brief Push log content and log level to the queue.
+     *
+     * @param logContent Log content.
+     * @param lgclass Log level.
+     * @return true Write successfully.
+     * @return false Write unsuccessfully.
+     */
     bool writeLog(const char * logContent, logClass lgclass)
     {
         return m_queue.push(logContent) && m_classQueue.push(lgclass);
     }
 
+    /**
+     * @brief Push log content and log level to the queue.
+     *
+     * @param logContent Log content.
+     * @param lgclass Log level.
+     * @param ... variable parameters.
+     * @return true Write successfully.
+     * @return false Write unsuccessfully.
+     */
     bool writeLog(logClass lgclass, const char * logContent,  ...)
     {
         memset(m_logBuf, '\0', 1024);
@@ -102,6 +159,12 @@ public:
         return m_queue.push(m_logBuf) && m_classQueue.push(lgclass);
     }
 
+    /**
+     * @brief Write content to the file according to the log level.
+     *
+     * @param logContent Log content.
+     * @param lgclass Log level.
+     */
     void write(const char * logContent, logClass lgclass)
     {
 
@@ -150,6 +213,12 @@ public:
     }
 
 public:
+    /**
+     * @brief Construct a new log object
+     *
+     * @param[in] fileName file name.
+     * @param[in] queueSize log queue size.
+     */
     log(const char *fileName, int queueSize): m_queue(queueSize), m_classQueue(queueSize)
     {
         m_fileName = new char[200];
@@ -160,6 +229,11 @@ public:
         }
     }
 
+    /**
+     * @brief Create worker thread.
+     *
+     * @return pthread_t working thread ID.
+     */
     pthread_t init()
     {
         if (!m_threadHaveBeenCreated) {
@@ -171,14 +245,18 @@ public:
         return 0;
     }
 
+    /**
+     * @brief Destroy the log object
+     *
+     */
     ~log()
     {
         m_file.close();
         delete m_fileName;
     }
 
-    bool m_threadHaveBeenCreated = false;
-    char m_logBuf[1024];
+    bool m_threadHaveBeenCreated = false; /// flag used to identify whether working thread has been created.
+    char m_logBuf[1024]; /// log buffer.
 };
 
 
